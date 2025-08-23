@@ -28,8 +28,10 @@ WebsocketServer/public/clients/*
 WebsocketServer/log/*
 WebsocketServer/serverDB.db
 
-WebSocketChatClient.pro.user
+LuChat.pro.user
 EasyChat.pro.*
 config.json
-build-EasyChat*
+
+
+build-LuChat-Desktop_Qt_5_14_2_MinGW_32_bit-Debug*
 
