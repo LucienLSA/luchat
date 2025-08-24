@@ -12,3 +12,14 @@ var Clients = make(map[*websocket.Conn]bool)
 // goroutine之间传递广播消息
 var Broadcast = make(chan StringMessage)
 var OnlineUsers []OnlineUser
+
+// 在线用户
+type OnlineSt struct {
+	Userid   string
+	Username string
+}
+
+type OnlineUser struct {
+	Online OnlineSt
+	Addr   string
+}

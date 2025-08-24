@@ -12,9 +12,10 @@ const QString APPLICATION_VERSION = "1.1.0";
 // 配置文件中的键（用于QSettings存储服务器地址、用户信息等）
 const QString CURRENT_SERVER_HOST = "CURRENT_SERVER_HOST";       // 当前服务器IP
 const QString WEBSOCKET_SERVER_PORT = "WEBSOCKET_SERVER_PORT";   // WebSocket端口
-const QString WEBSOCKET_USER_NAME = "WEBSOCKET_USER_NAME";       // 用户名
+const QString WEBSOCKET_USER_PHONE = "WEBSOCKET_USER_PHONE";       // 用户手机号
 const QString WEBSOCKET_USER_ID = "WEBSOCKET_USER_ID";           // 用户ID
-const QString AUTO_LOGIN = "AUTO_LOGIN";                         // 自动登录标志
+const QString WEBSOCKET_USER_PWD = "WEBSOCKET_USER_PWD"; // 用户密码
+const QString WEBSOCKET_REMBER_PWD = "WEBSOCKET_REMBER_PWD";   // 是否记住密码
 
 // 消息类型（用于区分不同业务的WebSocket消息）
 const QString MSG_TYPE_CHAT = "chat";         // 普通聊天消息
@@ -31,10 +32,11 @@ extern QString APPLICATION_DIR;
  * @brief 用户信息结构体（存储登录用户或在线用户的信息）
  */
 typedef struct _UserInfo {
-    QString strUserName;  // 用户名（显示用）
+    QString strUserPhone;  // 用户名（显示用）
     QString strUserId;    // 用户ID（唯一标识，用于私聊）
     QString strPwd;       // 密码（登录时使用）
     QString strLoginTime; // 登录时间（用于显示在线状态）
+    QString strEmail;     // 邮箱（预留）
 } UserInfo, *PUserInfo;
 
 
@@ -44,12 +46,18 @@ typedef struct _UserInfo {
 typedef struct _MsgInfo {
     QString strType;      // 消息类型（MSG_TYPE_CHAT/MSG_TYPE_FILE等）
     QString strFromUserId;// 发送者ID
-    QString strFromName;  // 发送者名称
+    QString strFromPhone;  // 发送者名称
     QString strToUserId;  // 接收者ID（空表示群聊）
     QString strContent;   // 消息内容（文本或文件链接）
     QString strTime;      // 发送时间（格式：yyyy-MM-dd HH:mm:ss）
     QString strFileSize;  // 文件大小（仅文件消息有值）
+    QString strEmail;    // 发送者邮箱（预留）
 } MsgInfo, *PMsgInfo;
+
+enum HttpRequest {
+    REQUEST_LOGIN, // 登录请求
+    REQUEST_REGISTER
+};
 
 // -------------------------- 全局变量 --------------------------
 extern UserInfo g_stUserInfo;       // 当前登录用户信息
@@ -68,5 +76,33 @@ void RestartApp();
  */
 QString FormatTime();
 
+
+// WebSocket错误信息（从原项目整理）
+const QString WEBSOCKET_ERROR_STRINGS[24] = {
+    "未知错误",
+    "连接被拒绝（或超时）",
+    "远程主机关闭了连接",
+    "未找到主机地址",
+    "应用程序缺乏必要权限",
+    "本地系统资源不足",
+    "操作超时",
+    "数据报超过系统限制",
+    "网络错误（如网线断开）",
+    "地址已被占用",
+    "绑定的地址不属于本机",
+    "操作系统不支持该操作",
+    "代理需要认证",
+    "SSL/TLS握手失败",
+    "操作仍在后台进行",
+    "无法连接代理服务器",
+    "与代理服务器的连接意外关闭",
+    "与代理服务器的连接超时",
+    "未找到代理地址",
+    "与代理服务器的协商失败",
+    "套接字状态不允许操作",
+    "SSL库内部错误",
+    "SSL数据无效",
+    "临时错误（如非阻塞模式下的阻塞操作）"
+};
 
 #endif // COMMON_H

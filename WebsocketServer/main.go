@@ -20,6 +20,9 @@ func main() {
 	if err := db.InitMySQL(config.Cfg); err != nil {
 		logrus.Fatalf("数据库初始化失败: %v", err)
 	}
+
+	// 初始化测试用户
+	// db.InitTestUser()
 	// 初始化Gin Route
 	r := router.Init()
 	// 广播协程

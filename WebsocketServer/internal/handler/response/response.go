@@ -1,24 +1,40 @@
 package response
 
-import "github.com/gin-gonic/gin"
+import (
+	"net/http"
 
-type Response struct {
-	Code    int         `json:"code"`
-	Message string      `json:"message"`
-	Data    interface{} `json:"data,omitempty"`
+	"github.com/gin-gonic/gin"
+)
+
+type ResponseData struct {
+	Code ResCode     `json:"code"`
+	Msg  interface{} `json:"msg"`
+	Data interface{} `json:"data,omitempty"`
 }
 
-func Success(c *gin.Context, data interface{}) {
-	c.JSON(200, Response{
-		Code:    0,
-		Message: "success",
-		Data:    data,
+// 返回错误
+func ResponseError(c *gin.Context, code ResCode) {
+	c.JSON(http.StatusOK, &ResponseData{
+		Code: code,
+		Msg:  code.GetMsg(),
+		Data: nil,
 	})
 }
 
-func Fail(c *gin.Context, code int, message string) {
-	c.JSON(200, Response{
-		Code:    code,
-		Message: message,
+// 返回错误带信息
+func ResponseErrorMsg(c *gin.Context, code ResCode, msg interface{}) {
+	c.JSON(http.StatusOK, &ResponseData{
+		Code: code,
+		Msg:  msg,
+		Data: nil,
+	})
+}
+
+// 返回成功带数据
+func ResponseSuccessData(c *gin.Context, data interface{}) {
+	c.JSON(http.StatusOK, &ResponseData{
+		Code: CodeSuccess,
+		Msg:  CodeSuccess.GetMsg(),
+		Data: data,
 	})
 }

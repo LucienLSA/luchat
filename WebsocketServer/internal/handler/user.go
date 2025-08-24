@@ -2,8 +2,8 @@ package handler
 
 import (
 	"luchat/WebsocketServer/internal/handler/request"
+	"luchat/WebsocketServer/internal/handler/response"
 	"luchat/WebsocketServer/internal/service"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -11,45 +11,69 @@ import (
 func Login(c *gin.Context) {
 	var req request.LoginReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"msg": "参数错误:" + err.Error(),
-		})
+		// c.JSON(http.StatusBadRequest, gin.H{
+		// 	"code": 401,
+		// 	"msg":  "参数错误:" + err.Error(),
+		// })
+		response.ResponseError(c, response.CodeInvalidParam)
 		return
 	}
 	// 验证用户
-	user, err := service.VerifyUser(req.UserName, req.Password)
+	user, err := service.VerifyUser(req.UserPhone, req.Password)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"msg": "登录失败:" + err.Error(),
-		})
+		// c.JSON(http.StatusOK, gin.H{
+		// 	"code": 502,
+		// 	"msg":  "登录失败:" + err.Error(),
+		// })
+		response.ResponseError(c, response.CodeLoginFailed)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"msg":      "登录成功",
-		"userid":   user.ID,
-		"username": user.Username,
-	})
+	// c.JSON(http.StatusOK, gin.H{
+	// 	"code":      200,
+	// 	"msg":       "登录成功",
+	// 	"userid":    user.ID,
+	// 	"userphone": user.UserPhone,
+	// })
+	userInfo := &response.UserLoginResp{
+		UserID:    user.ID,
+		UserPhone: user.UserPhone,
+	}
+	response.ResponseSuccessData(c, userInfo)
 }
 
 func Register(c *gin.Context) {
 	var req request.RegisterReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"msg": "参数错误:" + err.Error(),
-		})
+		// c.JSON(http.StatusBadRequest, gin.H{
+		// 	"code": 401,
+		// 	"msg":  "参数错误:" + err.Error(),
+		// })
+		// return
+		response.ResponseError(c, response.CodeInvalidParam)
 		return
 	}
+
 	// 验证用户
-	user, err := service.CreateUser(req.UserName, req.Password)
+	user, err := service.CreateUser(req.UserPhone, req.Password)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"msg": "注册失败:" + err.Error(),
-		})
+		if err == response.ErrorUserExist {
+			response.ResponseError(c, response.CodeUserExist)
+			return
+		} else {
+			response.ResponseError(c, response.CodeServerBusy)
+		}
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"msg":      "注册成功",
-		"userid":   user.ID,
-		"username": user.Username,
-	})
+
+	// c.JSON(http.StatusOK, gin.H{
+	// 	"code":      200,
+	// 	"msg":       "注册成功",
+	// 	"userid":    user.ID,
+	// 	"userphone": user.UserPhone,
+	// })
+	userInfo := &response.UserRegisterResp{
+		UserID:    user.ID,
+		UserPhone: user.UserPhone,
+	}
+	response.ResponseSuccessData(c, userInfo)
 }

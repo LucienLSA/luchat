@@ -20,7 +20,7 @@ func Init(logPath, logFileName string) {
 	baselogPath := filepath.Join(logPath, logFileName)
 	writer, err := rotatelogs.New(
 		baselogPath+".%Y%m%d%H%M",
-		rotatelogs.WithLinkName(baselogPath),
+		// rotatelogs.WithLinkName(baselogPath), // 注释掉符号链接，避免Windows权限问题
 		rotatelogs.WithMaxAge(30*24*time.Hour),
 		rotatelogs.WithRotationTime(24*time.Hour),
 	)
