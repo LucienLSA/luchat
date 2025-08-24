@@ -6,11 +6,14 @@
 
 // -------------------------- 全局变量初始化 --------------------------
 QString APPLICATION_DIR = "";  // 应用程序目录（在main函数中初始化）
-UserInfo g_stUserInfo = {"", "", "", ""};  // 初始化为空用户
-QWebSocket g_WebSocket;        // 全局WebSocket对象
+// 初始化全局用户信息（空值）
+UserInfo g_stUserInfo;
 
-// 配置文件存储路径：Windows在注册表，Linux在~/.config，Mac在~/Library/Preferences
-QSettings g_Settings("LuChat", "LuChat");
+// 初始化全局WebSocket实例
+QWebSocket g_WebSocket;
+
+//// 配置文件存储路径：Windows在注册表，Linux在~/.config，Mac在~/Library/Preferences
+//QSettings g_Settings("LuChat", "LuChat");
 
 
 // -------------------------- 工具函数实现 --------------------------

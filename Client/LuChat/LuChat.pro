@@ -17,15 +17,29 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     common.cpp \
+    logindlg.cpp \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    passwordedit.cpp \
+    registrydlg.cpp \
+    settingdlg.cpp
+
 
 HEADERS += \
     common.h \
-    mainwindow.h
+    logindlg.h \
+    mainwindow.h \
+    passwordedit.h \
+    registrydlg.h \
+    settingdlg.h
+
 
 FORMS += \
-    mainwindow.ui
+    logindlg.ui \
+    mainwindow.ui \
+    registrydlg.ui \
+    settingdlg.ui
+
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -33,4 +47,5 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 RESOURCES += \
-    ../images/images.qrc
+    pic.qrc
+

@@ -15,6 +15,11 @@ public:
     explicit SettingDlg(QWidget *parent = nullptr);
     ~SettingDlg();
 
+private slots:
+    void on_okpushButton_clicked();
+
+    void on_cancelpushButton_clicked();
+
 private:
     Ui::SettingDlg *ui;
 };

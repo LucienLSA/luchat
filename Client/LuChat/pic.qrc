@@ -1,2 +1,9 @@
-<!DOCTYPE RCC>
-<RCC version="1.0"/>
+<RCC>
+    <qresource prefix="/icon">
+        <file>images/logo.ico</file>
+    </qresource>
+    <qresource prefix="/tools">
+        <file>images/invisible.svg</file>
+        <file>images/visible.svg</file>
+    </qresource>
+</RCC>

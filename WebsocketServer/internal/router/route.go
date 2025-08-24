@@ -28,8 +28,10 @@ func Init() *gin.Engine {
 	api := r.Group("/api")
 	{
 		api.POST("/login", handler.Login)
-		api.POST("/register", handler.Register) // 后续实现
+		api.POST("/register", handler.Register)
+
 		api.POST("/upload", handler.UploadFile)
+		api.DELETE("/deletefile", handler.DeleteFile)
 
 	}
 	// WebSocket路由

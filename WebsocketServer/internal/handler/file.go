@@ -42,3 +42,7 @@ func UploadFile(c *gin.Context) {
 		"file_path": "/public/uploads/" + filename,
 	})
 }
+
+func DeleteFile(c *gin.Context) {
+
+}
