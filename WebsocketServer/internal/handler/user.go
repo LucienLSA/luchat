@@ -18,6 +18,7 @@ func Login(c *gin.Context) {
 		response.ResponseError(c, response.CodeInvalidParam)
 		return
 	}
+
 	// 验证用户
 	user, err := service.VerifyUser(req.UserPhone, req.Password)
 	if err != nil {
@@ -25,7 +26,13 @@ func Login(c *gin.Context) {
 		// 	"code": 502,
 		// 	"msg":  "登录失败:" + err.Error(),
 		// })
-		response.ResponseError(c, response.CodeLoginFailed)
+		if err == response.ErrorUserNotExist {
+			response.ResponseError(c, response.CodeUserNotExist)
+		} else if err == response.ErrorInvalid {
+			response.ResponseError(c, response.CodeInvalidPassword)
+		} else {
+			response.ResponseError(c, response.CodeLoginFailed)
+		}
 		return
 	}
 	// c.JSON(http.StatusOK, gin.H{

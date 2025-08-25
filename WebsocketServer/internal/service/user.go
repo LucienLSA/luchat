@@ -8,6 +8,9 @@ import (
 
 // 验证用户
 func VerifyUser(userphone, password string) (*model.ChatUser, error) {
+	if ok := db.IsUserExist(userphone); !ok {
+		return nil, response.ErrorUserNotExist
+	}
 	user := model.ChatUser{UserPhone: userphone, Password: password}
 	if err := db.VerifyUser(&user); err != nil {
 		return nil, response.ErrorInvalid

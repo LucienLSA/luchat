@@ -149,7 +149,7 @@
        </widget>
       </item>
       <item row="1" column="2">
-       <widget class="QLineEdit" name="passwordlineEdit"/>
+       <widget class="PasswordEdit" name="passwordlineEdit"/>
       </item>
       <item row="1" column="0">
        <widget class="QLabel" name="passwordlabel">
@@ -228,6 +228,13 @@
    </layout>
   </widget>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>PasswordEdit</class>
+   <extends>QLineEdit</extends>
+   <header>passwordedit.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

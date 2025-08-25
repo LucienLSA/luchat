@@ -96,7 +96,7 @@
     <item row="1" column="1">
      <layout class="QGridLayout" name="gridLayout">
       <item row="2" column="2">
-       <widget class="QLineEdit" name="cfmpasswordlineEdit"/>
+       <widget class="PasswordEdit" name="cfmpasswordlineEdit"/>
       </item>
       <item row="2" column="0">
        <widget class="QLabel" name="cfmpasswordlabel">
