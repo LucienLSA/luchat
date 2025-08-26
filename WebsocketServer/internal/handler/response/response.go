@@ -8,7 +8,7 @@ import (
 
 type ResponseData struct {
 	Code ResCode     `json:"code"`
-	Msg  interface{} `json:"msg"`
+	Msg  interface{} `json:"message"`
 	Data interface{} `json:"data,omitempty"`
 }
 

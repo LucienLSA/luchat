@@ -69,7 +69,7 @@ void RegistryDlg::on_registerReplyFinished(QNetworkReply *reply)
 
     QJsonObject jsonObj = jsonDoc.object();
     int code = jsonObj["code"].toInt();
-    QString message = jsonObj["msg"].toString();
+    QString message = jsonObj["message"].toString();
     if (code == 200) {
            QMessageBox::information(this, "注册成功",message);
            // 发送注册成功信号，将注册的手机号，通过信号携带出来，登录对话框直接读取

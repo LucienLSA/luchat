@@ -13,6 +13,21 @@ var Clients = make(map[*websocket.Conn]bool)
 var Broadcast = make(chan StringMessage)
 var OnlineUsers []OnlineUser
 
+// 消息结构
+type Message struct {
+	Email    string `json:"email"`
+	Username string `json:"username"`
+	Userid   string `json:"userid"`
+	Message  string `json:"message"`
+	Filelink string `json:"filelink"`
+	Image    string `json:"image"`
+}
+
+type StringMessage struct {
+	MessageType int
+	Message     []byte
+}
+
 // 在线用户
 type OnlineSt struct {
 	Userid   string

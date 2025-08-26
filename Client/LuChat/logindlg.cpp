@@ -175,7 +175,7 @@ void LoginDlg::on_loginReplyFinished(QNetworkReply *reply)
     // 响应码
     int code = jsonObj["code"].toInt();
     // 消息
-    QString message = jsonObj["msg"].toString();
+    QString message = jsonObj["message"].toString();
 
     if ( code == 200 ) {
         // 保存用户信息到全局变量
@@ -233,7 +233,6 @@ void LoginDlg::loadSavedUserInfo()
         ui->passwordlineEdit->setText(password);
         ui->passwordcheckBox->setChecked(true);
     }
-
 }
 
 // 保存用户信息

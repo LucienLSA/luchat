@@ -44,13 +44,14 @@ typedef struct _UserInfo {
  * @brief 消息信息结构体（存储聊天消息的完整内容）
  */
 typedef struct _MsgInfo {
-    QString strType;      // 消息类型（MSG_TYPE_CHAT/MSG_TYPE_FILE等）
-    QString strFromUserId;// 发送者ID
-    QString strFromPhone;  // 发送者名称
-    QString strToUserId;  // 接收者ID（空表示群聊）
+//    QString strType;      // 消息类型（MSG_TYPE_CHAT/MSG_TYPE_FILE等）
+//    QString strFromUserId;// 发送者ID
+    QString strUserPhone;  // 发送者手机号
+    QString strUserId;  // 用户ID
     QString strContent;   // 消息内容（文本或文件链接）
     QString strTime;      // 发送时间（格式：yyyy-MM-dd HH:mm:ss）
-    QString strFileSize;  // 文件大小（仅文件消息有值）
+//    QString strFileSize;  // 文件大小（仅文件消息有值）
+    QString fileLink;
     QString strEmail;    // 发送者邮箱（预留）
 } MsgInfo, *PMsgInfo;
 
