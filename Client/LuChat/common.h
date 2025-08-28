@@ -78,7 +78,7 @@ void RestartApp();
 QString FormatTime();
 
 
-// WebSocket错误信息（从原项目整理）
+// WebSocket错误信息
 const QString WEBSOCKET_ERROR_STRINGS[24] = {
     "未知错误",
     "连接被拒绝（或超时）",
@@ -104,6 +104,33 @@ const QString WEBSOCKET_ERROR_STRINGS[24] = {
     "SSL库内部错误",
     "SSL数据无效",
     "临时错误（如非阻塞模式下的阻塞操作）"
+};
+
+const QHash<QAbstractSocket::SocketError, QString> WEBSOCKET_ERROR_MAP = {
+    {QAbstractSocket::UnknownSocketError, "未知错误"},
+    {QAbstractSocket::ConnectionRefusedError, "连接被拒绝（或超时）"},
+    {QAbstractSocket::RemoteHostClosedError, "远程主机关闭了连接"},
+    {QAbstractSocket::HostNotFoundError, "未找到主机地址"},
+    {QAbstractSocket::SocketAccessError, "应用程序缺乏必要权限"},
+    {QAbstractSocket::SocketResourceError, "本地系统资源不足"},
+    {QAbstractSocket::SocketTimeoutError, "操作超时"},
+    {QAbstractSocket::DatagramTooLargeError, "数据报超过系统限制"},
+    {QAbstractSocket::NetworkError, "网络错误（如网线断开）"},
+    {QAbstractSocket::AddressInUseError, "地址已被占用"},
+    {QAbstractSocket::SocketAddressNotAvailableError, "绑定的地址不属于本机"},
+    {QAbstractSocket::UnsupportedSocketOperationError, "操作系统不支持该操作"},
+    {QAbstractSocket::ProxyAuthenticationRequiredError, "代理需要认证"},
+    {QAbstractSocket::SslHandshakeFailedError, "SSL/TLS握手失败"},
+    {QAbstractSocket::UnfinishedSocketOperationError, "操作仍在后台进行"},
+    {QAbstractSocket::ProxyConnectionRefusedError, "无法连接代理服务器"},
+    {QAbstractSocket::ProxyConnectionClosedError, "与代理服务器的连接意外关闭"},
+    {QAbstractSocket::ProxyConnectionTimeoutError, "与代理服务器的连接超时"},
+    {QAbstractSocket::ProxyNotFoundError, "未找到代理地址"},
+    {QAbstractSocket::ProxyProtocolError, "与代理服务器的协商失败"},
+    {QAbstractSocket::OperationError, "套接字状态不允许操作"},
+    {QAbstractSocket::SslInternalError, "SSL库内部错误"},
+    {QAbstractSocket::SslInvalidUserDataError, "SSL数据无效"},
+    {QAbstractSocket::TemporaryError, "临时错误（如非阻塞模式下的阻塞操作）"}
 };
 
 #endif // COMMON_H

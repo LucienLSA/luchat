@@ -2,6 +2,7 @@
 #include "ui_registrydlg.h"
 
 
+
 RegistryDlg::RegistryDlg(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::RegistryDlg),
@@ -12,8 +13,9 @@ RegistryDlg::RegistryDlg(QWidget *parent) :
     // 移除对话框右上角的问号按钮
     Qt::WindowFlags flags = this->windowFlags();
     setWindowFlags(flags & ~Qt::WindowContextHelpButtonHint);
-    ui->setupUi(this);
+
     setWindowTitle("用户注册");
+
 
     // 初始化网络注册管理器
     m_pRegisterManager = new QNetworkAccessManager(this);
@@ -22,13 +24,13 @@ RegistryDlg::RegistryDlg(QWidget *parent) :
             this,&RegistryDlg::on_registerReplyFinished);
 
 
-    // 手动连接注册按钮的信号槽
-    connect(ui->registrypushButton, &QPushButton::clicked,
-            this, &RegistryDlg::on_registrypushButton_clicked);
+//    // 手动连接注册按钮的信号槽
+//    connect(ui->registrypushButton, &QPushButton::clicked,
+//            this, &RegistryDlg::on_registrypushButton_clicked);
 
-    // 手动连接关闭注册对话框的信号槽
-    connect(ui->cancelpushButton, &QPushButton::clicked,
-            this, &RegistryDlg::on_cancelpushButton_clicked);
+//    // 手动连接关闭注册对话框的信号槽
+//    connect(ui->cancelpushButton, &QPushButton::clicked,
+//            this, &RegistryDlg::on_cancelpushButton_clicked);
 }
 
 RegistryDlg::~RegistryDlg()
@@ -41,7 +43,11 @@ RegistryDlg::~RegistryDlg()
 
 void RegistryDlg::on_cancelpushButton_clicked()
 {
-        reject();
+    // 立即恢复按钮状态，避免误锁定
+    ui->registrypushButton->setEnabled(true);
+    ui->registrypushButton->setText("注册");
+    // 关闭对话框
+    reject();
 }
 
 // 注册响应完成调用的函数

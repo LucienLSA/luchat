@@ -13,6 +13,8 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QFileDialog>
+#include <QKeyEvent>
+#include <settingdlg.h>
 
 namespace Ui {
 class ChatWidget;
@@ -33,7 +35,7 @@ public:
 
 signals:
     void newMessageArrived(); // 新消息提醒
-    void uploadFile(QString filePath); // 上传文件请求
+    void uploadFile(QString filePath); // 上传文件信号
 
 
 private slots:
@@ -49,6 +51,10 @@ private slots:
     void OnTabCloseRequested(int index);
     // 切换标签页
     void OnCurrentChanged(int index);
+
+protected:
+    void keyPressEvent(QKeyEvent *e) override;
+    void keyReleaseEvent(QKeyEvent *e) override;
 
 private:
     Ui::ChatWidget *ui;

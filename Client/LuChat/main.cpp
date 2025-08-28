@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
     // 时间格式化函数
     qDebug() << "当前时间" << FormatTime();
 
-    // 设置组织名和应用名
+    // 配置QSettings存储路径
     QCoreApplication::setOrganizationName("private");
     QCoreApplication::setApplicationName("LuClient");
 
@@ -25,8 +25,8 @@ int main(int argc, char *argv[])
     QString ip = settings.value(CURRENT_SERVER_HOST).toString();
     QString port = settings.value(WEBSOCKET_SERVER_PORT).toString();
     if (ip.isEmpty() || port.isEmpty()) {
-        SettingDlg settingdlg;
-        if (settingdlg.exec() != QDialog::Accepted) {
+        SettingDlg *settingdlg = SettingDlg::GetInstance();
+        if (settingdlg->exec() != QDialog::Accepted) {
             return 0; // 用户取消设置，退出程序
         }
     }

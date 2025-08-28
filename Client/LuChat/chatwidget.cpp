@@ -1,5 +1,7 @@
 #include "chatwidget.h"
 #include "ui_chatwidget.h"
+#include <QStandardPaths>
+#include <QDateTime>
 
 ChatWidget::ChatWidget(QWidget *parent) :
     QWidget(parent),
@@ -15,6 +17,7 @@ ChatWidget::ChatWidget(QWidget *parent) :
     m_pTextEdit = new QTextEdit();
     m_pTextEdit->setReadOnly(true);  // 消息区域只读
     m_pTextEdit->setLineWrapMode(QTextEdit::WidgetWidth); // 自动换行
+
 
     // 设置大小策略（拉伸比例）
     QSizePolicy policy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -47,31 +50,34 @@ ChatWidget::ChatWidget(QWidget *parent) :
     ui->verticalSplitter->setChildrenCollapsible(false);
     ui->horizontalSplitter->setChildrenCollapsible(false);
 
-    // 6. 禁用上传按钮（默认未选择文件时不可用）
-    ui->uploadFilePushButton->setDisabled(true);
+//     6. 禁用上传按钮（默认未选择文件时不可用）
+    ui->uploadFilePushButton->setDisabled(false);
 
-    // 7. 设置消息HTML模板（HTML格式）设置占位符
+    // 7. 设置消息HTML模板设置占位符
     m_strContentTemplateWithoutLink =
         "<p><strong>%1</strong>：<br>&nbsp;&nbsp;%2&nbsp;&nbsp;<span style='color:gray'>(%3)</span></p>";
     m_strContentTemplateWithLink =
         "<p><strong>%1</strong>：<br>&nbsp;&nbsp;%2&nbsp;&nbsp;<a href='%3'>[文件]</a>&nbsp;&nbsp;<span style='color:gray'>(%4)</span></p>";
 
     // WebSocket消息接收信号（收到文本消息时触发）
-    connect(&g_WebSocket, &QWebSocket::textMessageReceived, this,&ChatWidget::OnWebSocketMsgReceived);
+    connect(&g_WebSocket, &QWebSocket::textMessageReceived, this,
+            &ChatWidget::OnWebSocketMsgReceived);
 
 
-    // 双击在线用户（发起私聊）
-    connect(ui->onlineUsersTableWidget, &QTableWidget::itemDoubleClicked, this, &ChatWidget::OnItemDoubleClicked);
+//    // 手动连接双击在线用户（发起私聊）
+//    connect(ui->onlineUsersTableWidget, &QTableWidget::itemDoubleClicked, this,
+//            &ChatWidget::OnItemDoubleClicked);
 
-    // 关闭聊天标签页
-    //    connect(ui->showMsgTabWidget, SIGNAL(tabCloseRequested(int)), this,
-//            SLOT(OnTabCloseRequested(int)));
-    // 切换聊天标签页
-//    connect(ui->showMsgTabWidget, SIGNAL(currentChanged(int)), this,
-//            SLOT(OnCurrentChanged(int)));
-    // 点击上传文件按钮
-//    connect(ui->uploadFilePushButton, SIGNAL(clicked()), this,
-//            SLOT(OnUploadFilePushButtonClicked()));
+//    // 手动连接关闭聊天标签页
+//    connect(ui->showMsgTabWidget, &QTabWidget::tabCloseRequested, this,
+//            &ChatWidget::OnTabCloseRequested);
+
+//    // 手动连接切换聊天标签页
+//    connect(ui->showMsgTabWidget, &QTabWidget::currentChanged, this,
+//            &ChatWidget::OnCurrentChanged);
+
+    // 注意：`on_uploadFilePushButton_clicked` 和 `on_sendMsgPushButton_clicked`
+    // 使用了 Qt 自动连接命名约定，无需手动 connect，避免触发两次
 }
 
 ChatWidget::~ChatWidget()
@@ -80,7 +86,29 @@ ChatWidget::~ChatWidget()
     delete ui;
 }
 
-// 启用/禁用发送按钮
+void ChatWidget::keyPressEvent(QKeyEvent *e) {
+    if (e->key() == Qt::Key_Control) {
+        m_bCtrlPressed = true;
+    }
+
+    if (m_bCtrlPressed && (e->key() == Qt::Key_Enter || e->key() == Qt::Key_Return)) {
+        on_sendMsgPushButton_clicked();
+    }
+
+    if (m_bCtrlPressed && e->key() == Qt::Key_E) {
+        SettingDlg *dlg = SettingDlg::GetInstance();
+        dlg->exec();
+    }
+}
+
+void ChatWidget::keyReleaseEvent(QKeyEvent *e)
+{
+    if (e->key() == Qt::Key_Control) {
+        m_bCtrlPressed = false;
+    }
+}
+
+// 启用/禁用发送和上传按钮
 void ChatWidget::SetSendBtnEnabled(bool enabled)
 {
     ui->sendMsgPushButton->setEnabled(enabled);
@@ -99,12 +127,15 @@ void ChatWidget::on_sendMsgPushButton_clicked()
     }
     // 当前聊天对话框的索引
     int curTabIndex = ui->showMsgTabWidget->currentIndex();
+    //定义消息中的message
     QJsonObject jsonObj;
     jsonObj["userphone"]=g_stUserInfo.strUserPhone;
     jsonObj["userid"] =g_stUserInfo.strUserId;
     jsonObj["message"] = msg;
     jsonObj["filelink"] = m_strFileLink; // 文件链接
+    jsonObj["time"] = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
 
+    // 定义消息json格式
     QJsonObject jsonMsg;
     if (curTabIndex == 0 ) {
         // 公共消息
@@ -121,9 +152,16 @@ void ChatWidget::on_sendMsgPushButton_clicked()
     ui->inputTextEdit->clear(); // 清空输入对话框
     // 公共消息/群聊
     if (curTabIndex == 0) {
-        m_jStringMessages["message"] += m_strContentTemplateWithoutLink
-                .arg(g_stUserInfo.strUserPhone).arg(msg).arg(jsonObj["time"].toString());
+        if (!m_strFileLink.isEmpty()) {
+            m_jStringMessages["message"] += m_strContentTemplateWithLink
+                    .arg(g_stUserInfo.strUserPhone).arg(msg).arg(m_strFileLink).arg(jsonObj["time"].toString());
+        } else {
+            m_jStringMessages["message"] += m_strContentTemplateWithoutLink
+                    .arg(g_stUserInfo.strUserPhone).arg(msg).arg(jsonObj["time"].toString());
+        }
         m_pTextEdit->setHtml(m_jStringMessages["message"]);
+        // 清空文件链接
+        m_strFileLink.clear();
     } else {
         QString targetUserID = m_vecUserIds[curTabIndex-1];
         if (!m_strFileLink.isEmpty()) {
@@ -145,7 +183,13 @@ void ChatWidget::on_sendMsgPushButton_clicked()
 // 点击上传文件
 void ChatWidget::on_uploadFilePushButton_clicked()
 {
-    QString filePath = QFileDialog::getOpenFileName(this,"选择文件","","所有文件");
+    const QString startDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    const QString filter =
+            "所有文件 (*.*);;"
+            "图片文件 (*.png *.jpg *.jpeg *.gif *.bmp);;"
+            "文档 (*.txt *.pdf *.doc *.docx *.xls *.xlsx);;"
+            "压缩包 (*.zip *.rar *.7z)";
+    QString filePath = QFileDialog::getOpenFileName(this, "选择文件", startDir, filter);
     if (!filePath.isEmpty()) {
         // 发出上传文件信号
         emit uploadFile(filePath);
@@ -199,7 +243,7 @@ void ChatWidget::OnWebSocketMsgReceived(const QString &msg)
         QJsonObject onlineObj = jsonObj["online"].toObject();
         QString userId = onlineObj["userid"].toString();
         if (userId == g_stUserInfo.strUserId) {
-            return;
+            // return;
         }
 
         UserInfo user;

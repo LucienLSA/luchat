@@ -18,15 +18,32 @@ LoginDlg::LoginDlg(QWidget *parent) :
     ui(new Ui::LoginDlg),
     m_pLoginManager(nullptr),
     m_bCtrlPressed(false),
-    m_pRegisterDialog(nullptr)
+    m_pRegisterDialog(nullptr) // 参数列表初始化
 {
     ui->setupUi(this);
 
     // 移除对话框右上角的问号按钮
     Qt::WindowFlags flags = this->windowFlags();
     setWindowFlags(flags & ~Qt::WindowContextHelpButtonHint);
-    ui->setupUi(this);
+    // 保持仅调用一次 setupUi（setupUi 已自动调用 connectSlotsByName）
     setWindowTitle("用户登录");
+
+
+    // 加载保存的用户信息
+    loadSavedUserInfo();
+
+
+//    // 手动连接服务器配置按钮的信号槽
+//    connect(ui->serverpushButton, &QPushButton::clicked,
+//            this, &LoginDlg::on_serverpushButton_clicked);
+
+//    // 手动连接登录按钮的信号槽
+//    connect(ui->loginpushButton, &QPushButton::clicked,
+//            this, &LoginDlg::on_loginpushButton_clicked);
+
+//    // 手动连接注册按钮的信号槽
+//    connect(ui->registrypushButton, &QPushButton::clicked,
+//            this, &LoginDlg::on_registrypushButton_clicked);
 
     // 初始化网络请求管理器
     // 当登录请求完成完成后，调用函数
@@ -39,22 +56,6 @@ LoginDlg::LoginDlg(QWidget *parent) :
     m_pRegisterDialog = new RegistryDlg(this);
     connect(m_pRegisterDialog, &RegistryDlg::registerSuccess,
             this,&LoginDlg::on_registerSuccess);
-
-
-    // 加载保存的用户信息
-    loadSavedUserInfo();
-    
-    // 手动连接服务器配置按钮的信号槽
-    connect(ui->serverpushButton, &QPushButton::clicked, 
-            this, &LoginDlg::on_serverpushButton_clicked);
-    
-    // 手动连接登录按钮的信号槽
-    connect(ui->loginpushButton, &QPushButton::clicked,
-            this, &LoginDlg::on_loginpushButton_clicked);
-    
-    // 手动连接注册按钮的信号槽
-    connect(ui->registrypushButton, &QPushButton::clicked,
-            this, &LoginDlg::on_registrypushButton_clicked);
 }
 
 LoginDlg::~LoginDlg()
@@ -69,23 +70,23 @@ LoginDlg::~LoginDlg()
 // 点击登录按钮事件
 void LoginDlg::on_loginpushButton_clicked()
 {
-        QString userPhone = ui->phonelineEdit->text().trimmed();
-        QString password = ui->passwordlineEdit->text().trimmed();
+    QString userPhone = ui->phonelineEdit->text().trimmed();
+    QString password = ui->passwordlineEdit->text().trimmed();
 
-        // 输入验证
-        if(userPhone.isEmpty() || password.isEmpty()) {
-            QMessageBox::warning(this, "提示","用户手机号或者密码不能为空");
-                    return;
-        }
-        // 点击一次之后禁用，防止重复提交
-        ui->loginpushButton->setEnabled(false);
-        ui->loginpushButton->setText("登陆中...");
+    // 输入验证
+    if(userPhone.isEmpty() || password.isEmpty()) {
+        QMessageBox::warning(this, "提示","用户手机号或者密码不能为空");
+                return;
+    }
+    // 点击一次之后禁用，防止重复提交
+    ui->loginpushButton->setEnabled(false);
+    ui->loginpushButton->setText("登陆中...");
 
-        // 发送登录网络请求
-        qDebug() << "userphone" << userPhone;
-        qDebug() << "password" << password;
+    // 发送登录网络请求
+    qDebug() << "userphone" << userPhone;
+    qDebug() << "password" << password;
 
-        sendLoginRequest(userPhone,password);
+    sendLoginRequest(userPhone,password);
 }
 
 // 注册成功回调函数
@@ -97,6 +98,23 @@ void LoginDlg::on_registerSuccess(const QString &userPhone)
     ui->passwordlineEdit->clear();
     // 指针聚焦
     ui->passwordlineEdit->setFocus();
+}
+
+void LoginDlg::keyPressEvent(QKeyEvent *e)
+{
+    if (e->key() == Qt::Key_Control) {
+        m_bCtrlPressed = true;
+    }
+    if (m_bCtrlPressed && (e->key() == Qt::Key_Enter || e->key() == Qt::Key_Return)) {
+        on_loginpushButton_clicked();
+    }
+}
+
+void LoginDlg::keyReleaseEvent(QKeyEvent *e)
+{
+    if (e->key() == Qt::Key_Control) {
+        m_bCtrlPressed = false;
+    }
 }
 
 
@@ -178,10 +196,16 @@ void LoginDlg::on_loginReplyFinished(QNetworkReply *reply)
     QString message = jsonObj["message"].toString();
 
     if ( code == 200 ) {
-        // 保存用户信息到全局变量
-        // 注意json的键
-        g_stUserInfo.strUserPhone = jsonObj["userphone"].toString();
-        g_stUserInfo.strUserId = jsonObj["userid"].toString();
+        // 保存用户信息到全局变量（服务端可能未返回 userphone，回退到输入框）
+        QString respPhone = jsonObj["userphone"].toString();
+        QString respUserId = jsonObj["userid"].toString();
+        if (respPhone.isEmpty()) {
+            respPhone = ui->phonelineEdit->text().trimmed();
+        }
+        g_stUserInfo.strUserPhone = respPhone;
+        if (!respUserId.isEmpty()) {
+            g_stUserInfo.strUserId = respUserId;
+        }
         // 保存当前时间
         g_stUserInfo.strLoginTime = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
 
@@ -209,8 +233,6 @@ void LoginDlg::on_registrypushButton_clicked()
         qDebug() << "错误：registrypushButton 不存在！";
         return;
     }
-
-    // 清空注册框并显示
     m_pRegisterDialog->show();
 }
 
@@ -249,18 +271,15 @@ void LoginDlg::saveUserInfo(const QString &userPhone, const QString &password)
 
 void LoginDlg::on_serverpushButton_clicked()
 {
-    
     // 检查按钮是否存在
     if (!ui->serverpushButton) {
         qDebug() << "错误：serverpushButton 不存在！";
         return;
     }
-    
 
     // 创建并显示服务器配置对话框
-    SettingDlg settingDlg(this);
-    
-    if (settingDlg.exec() == QDialog::Accepted) {
+    SettingDlg *settingDlg = SettingDlg::GetInstance();
+    if (settingDlg->exec() == QDialog::Accepted) {
         qDebug() << "用户确认了服务器配置";
         loadSavedUserInfo();
     } else {

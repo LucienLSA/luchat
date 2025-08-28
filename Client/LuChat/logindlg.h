@@ -10,6 +10,7 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 #include "registrydlg.h"
+#include <QKeyEvent>
 
 namespace Ui {
 class LoginDlg;
@@ -35,9 +36,17 @@ private slots:
 
     void on_registerSuccess(const QString &userPhone);
 
+protected:
+    void keyPressEvent(QKeyEvent *e) override;
+    void keyReleaseEvent(QKeyEvent *e) override;
+
 private:
     Ui::LoginDlg *ui;
-    QNetworkAccessManager *m_pLoginManager;  // 登录请求管理器
+    // 登录请求网络管理器
+    QNetworkAccessManager *m_pLoginManager;
+    // 注册对话框对象，堆上手动管理
+    RegistryDlg *m_pRegisterDialog;
+
     bool m_bCtrlPressed;  // 记录Ctrl键是否按下
 
     // 从配置读取保存的用户名和密码
@@ -55,7 +64,7 @@ private:
 //    // 测试网络连接
 //    void testNetworkConnection();
 
-    RegistryDlg *m_pRegisterDialog;
+
 };
 
 #endif // LOGINDLG_H

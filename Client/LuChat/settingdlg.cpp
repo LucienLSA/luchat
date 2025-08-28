@@ -4,6 +4,9 @@
 #include "common.h"
 #include <QMessageBox>
 
+// Define the static singleton instance pointer
+SettingDlg *SettingDlg::m_pInstance = nullptr;
+
 SettingDlg::SettingDlg(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SettingDlg)
@@ -15,6 +18,7 @@ SettingDlg::SettingDlg(QWidget *parent) :
     
     // 设置对话框标题
     setWindowTitle("设置");
+    // setupUi 已自动调用 connectSlotsByName
 
     // 从配置中读取已保存的IP和端口并显示
     QSettings setting;
@@ -26,6 +30,12 @@ SettingDlg::SettingDlg(QWidget *parent) :
     if (!port.isEmpty()) {
         ui->portlineEdit->setText(port);
     }
+
+//    connect(ui->okpushButton, &QPushButton::clicked, this,
+//            &SettingDlg::on_okpushButton_clicked);
+
+//    connect(ui->cancelpushButton, &QPushButton::clicked, this,
+//            &SettingDlg::on_cancelpushButton_clicked);
 }
 
 SettingDlg::~SettingDlg()

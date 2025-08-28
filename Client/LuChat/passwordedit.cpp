@@ -18,7 +18,6 @@ void PasswordEdit::init()
     addAction(m_pAction,QLineEdit::TrailingPosition);//右侧显示
     // 当点击切换按钮的图片时，调用函数
     connect(m_pAction,&QAction::triggered,this,&PasswordEdit::onInputVisible);
-
 }
 
 // 设置密码可见
