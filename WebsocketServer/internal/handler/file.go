@@ -3,6 +3,7 @@ package handler
 import (
 	"luchat/WebsocketServer/internal/service"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -21,7 +22,14 @@ func UploadFile(c *gin.Context) {
 	// 安全处理文件名：移除路径分隔符，防止路径遍历攻击
 	filename := strings.ReplaceAll(file.Filename, "/", "")
 	filename = strings.ReplaceAll(filename, "\\", "")
-	savePath := filepath.Join("public", "uploads", filename)
+	saveDir := filepath.Join("public", "uploads")
+	if err := os.MkdirAll(saveDir, 0755); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"msg": "创建上传目录失败：" + err.Error(),
+		})
+		return
+	}
+	savePath := filepath.Join(saveDir, filename)
 	if err := c.SaveUploadedFile(file, savePath); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"msg": "文件保存失败：" + err.Error(),
@@ -29,7 +37,7 @@ func UploadFile(c *gin.Context) {
 		return
 	}
 	// 保存到数据库
-	uploadUser := c.PostForm("username")
+	uploadUser := c.PostForm("userphone")
 	if err := service.SaveUploadedFile(filename, file.Size, uploadUser); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"msg": "保存上传记录失败" + err.Error(),

@@ -5,7 +5,8 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow),
       m_pChatWidget(nullptr),
-      m_pAccessManager(nullptr)
+      m_pAccessManager(nullptr),
+      m_pProgressDlg(nullptr)
 {
     ui->setupUi(this);
 
@@ -94,68 +95,171 @@ void MainWindow::OnNewMessageArrived()
     QApplication::alert(this); // 窗口闪烁提醒
 }
 
-// 点击文件上传后，调用
-void MainWindow::OnUploadFile(QString filePath)
+
+// 检查网络是否可用
+bool MainWindow::isNetworkAvailable() const
 {
-    QFile file(filePath);
-    if(!file.open(QIODevice::ReadOnly)) {
-        QMessageBox::warning(this,"错误","文件打开失败");
-        return;
+    QNetworkConfigurationManager manager;
+    return manager.isOnline();
+}
+
+void MainWindow::showUploadProgressDialog(const QString &fileName, qint64 fileSize, QNetworkReply *reply)
+{
+    // 创建或重置进度对话框
+        if (!m_pProgressDlg) {
+            m_pProgressDlg = new QProgressDialog(this);
+            m_pProgressDlg->setWindowTitle("上传文件"); // 设置标题
+            m_pProgressDlg->setLabelText("正在上传..."); // 设置标签文本
+            m_pProgressDlg->setCancelButtonText("取消"); // 取消按钮文本
+            m_pProgressDlg->setMinimumDuration(0); // 进度条最小值
+            m_pProgressDlg->setAutoClose(true);
+            m_pProgressDlg->setAutoReset(true);
+        }
+
+        m_pProgressDlg->setLabelText(QString("正在上传: %1").arg(fileName));
+        m_pProgressDlg->setMaximum(fileSize); // 最大值文件大小
+        m_pProgressDlg->setValue(0);
+        m_pProgressDlg->show();
+
+        // 连接取消信号，当点击取消按钮，中断上传
+        connect(m_pProgressDlg, &QProgressDialog::canceled, this, [this, reply]() {
+            if (reply && reply->isRunning()) {
+                reply->abort();
+            }
+            if (m_pProgressDlg) {
+                m_pProgressDlg->hide();
+            }
+        });
+
+        // 连接finished信号来自动关闭对话框
+        connect(reply, &QNetworkReply::finished, this, [this]() {
+            if (m_pProgressDlg && m_pProgressDlg->isVisible()) {
+                m_pProgressDlg->hide();
+            }
+        });
+}
+
+// 点击文件上传后，调用
+void MainWindow::OnUploadFile(const QString &filePath)
+{
+    // 1. 验证文件路径
+        if (filePath.isEmpty()) {
+            QMessageBox::warning(this, "错误", "文件路径为空");
+            return;
+        }
+        // 2. 检查文件是否存在和可读
+        QFileInfo fileInfo(filePath);
+        if (!fileInfo.exists() || !fileInfo.isReadable()) {
+            QMessageBox::warning(this, "错误", QString("文件不存在或不可读: %1").arg(filePath));
+            return;
+        }
+
+        // 3. 检查文件大小（避免上传过大文件）
+        const qint64 maxFileSize = 100 * 1024 * 1024; // 100MB
+        if (fileInfo.size() > maxFileSize) {
+            QMessageBox::warning(this, "文件过大",
+                QString("文件大小 (%1 MB) 超过限制 (%2 MB)")
+                    .arg(fileInfo.size() / (1024.0 * 1024.0), 0, 'f', 1)
+                    .arg(maxFileSize / (1024 * 1024)));
+            return;
+        }
+
+        // 4. 检查网络连接状态
+        if (!isNetworkAvailable()) {
+            QMessageBox::warning(this, "网络错误", "网络连接不可用");
+            return;
+        }
+
+
+        // 5. 构建URL（添加参数验证）
+        QString ip = m_Settings.value(CURRENT_SERVER_HOST).toString();
+        QString port = m_Settings.value(WEBSOCKET_SERVER_PORT).toString();
+
+        if (ip.isEmpty() || port.isEmpty()) {
+            QMessageBox::warning(this, "配置错误", "服务器地址或端口未配置");
+            return;
+        }
+
+        QUrl url(QString("http://%1:%2/api/upload").arg(ip).arg(port));
+        if (!url.isValid()) {
+            QMessageBox::warning(this, "错误", "无效的URL地址");
+            return;
+        }
+
+
+        // 使用 multipart/form-data 适配服务端 c.FormFile("file")
+        QHttpMultiPart *multiPart = new QHttpMultiPart(QHttpMultiPart::FormDataType);
+
+        // 文件部分
+        QHttpPart filePart;
+        // 设置Header
+        filePart.setHeader(QNetworkRequest::ContentDispositionHeader,
+                           QVariant(QString("form-data; name=\"file\"; filename=\"%1\"")
+                                   .arg(fileInfo.fileName())));
+
+        // 绑定文件数据为设备，避免一次性读入内存
+        QFile *upFile = new QFile(filePath);
+        if (!upFile->open(QIODevice::ReadOnly)) {
+            delete upFile;
+            delete multiPart;
+            QMessageBox::warning(this, "错误", "文件打开失败");
+            return;
+        }
+        filePart.setBodyDevice(upFile);
+        upFile->setParent(multiPart); // 由 multiPart 管理释放
+        multiPart->append(filePart);
+
+        // 用户名部分（服务端使用 PostForm("userphone")）
+        QHttpPart userPart;
+        userPart.setHeader(QNetworkRequest::ContentDispositionHeader,
+                           QVariant("form-data; name=\"userphone\""));
+        userPart.setBody(g_stUserInfo.strUserPhone.toUtf8());
+        multiPart->append(userPart);
+
+        // 发起请求
+        QNetworkRequest req(url);
+        req.setRawHeader("Accept", "application/json");
+        QNetworkReply *reply = m_pAccessManager->post(req, multiPart);
+        multiPart->setParent(reply); // reply 删除时一并释放
+
+
+        // 绑定上传信号，错误发生处理函数，文件上传进度条
+        connect(reply, static_cast<void(QNetworkReply::*)(QNetworkReply::NetworkError)>(&QNetworkReply::error),
+                this,&MainWindow::upLoadError);
+
+        connect(reply, &QNetworkReply::uploadProgress, this,&MainWindow::OnUploadProgress);
+
+        // 删除由 replyFinished 统一负责，不在此处重复 deleteLater
+
+        // 10. 显示进度对话框（改进用户体验）
+        showUploadProgressDialog(fileInfo.fileName(), fileInfo.size(), reply);
     }
-    // 读取文件内容
-    QByteArray fileData = file.readAll();
-    file.close();
 
-    // 构建上传URL
-    // 提取文件名（兼容各平台路径分隔符）
-    QString fileName = QFileInfo(filePath).fileName();
-    QString ip = m_Settings.value(CURRENT_SERVER_HOST).toString();
-    QString port = m_Settings.value(WEBSOCKET_SERVER_PORT).toString();
-    QUrl url(QString("http://%1:%2/upload?filename=%3").arg(ip).arg(port).arg(fileName));
+    // 文件请求信号完成，接收响应
+    void MainWindow::replyFinished(QNetworkReply *reply)
+    {
+        const int httpStatus = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        const QByteArray body = reply->readAll();
+        qDebug() << "Upload finished, status:" << httpStatus << ", error:" << reply->error()
+                 << ", errorString:" << reply->errorString() << ", body:" << body;
 
-    // 设置请求url
-    QNetworkRequest req(url);
-    // 设置请求头
-    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/octet-stream");
-    // 发送上传请求，并返回响应给reply
-    QNetworkReply *reply = m_pAccessManager->post(req,fileData);
-    // 绑定上传信号，错误发生处理函数，文件上传进度条
-    connect(reply, static_cast<void(QNetworkReply::*)(QNetworkReply::NetworkError)>(&QNetworkReply::error),
-            this,&MainWindow::upLoadError);
-    connect(reply, &QNetworkReply::uploadProgress, this,&MainWindow::OnUploadProgress);
-
-    // 显示进度对话框
-    if (!m_pProgressDlg) {
-        m_pProgressDlg = new QProgressDialog("正在上传...","取消", 0, fileData.size(), this);
-        m_pProgressDlg->setWindowTitle("上传文件");
-        m_pProgressDlg->setAutoClose(false);
-        m_pProgressDlg->setAutoReset(false);
-    }
-    m_pProgressDlg->show();
-    // 允许用户取消：仅中止当前 reply，最终删除由 finished 统一处理
-    connect(m_pProgressDlg, &QProgressDialog::canceled, this, [this, reply]() {
-        reply->abort();
+        if (reply->error() == QNetworkReply::NoError && httpStatus == 200) {
+            QMessageBox::information(this, "成功", "文件上传成功");
+        } else {
+            QString reason = reply->errorString();
+            if (!body.isEmpty()) {
+                reason += "\n" + QString::fromUtf8(body);
+            }
+            QMessageBox::warning(this, "失败", QString("文件上传失败\n%1").arg(reason));
+        }
+        // 上传完成，隐藏消息对话框
         if (m_pProgressDlg) {
             m_pProgressDlg->hide();
         }
-    });
+        reply->deleteLater();
 }
 
-// 文件请求信号完成，接收响应
-void MainWindow::replyFinished(QNetworkReply *reply)
-{
-    if(reply->error() == QNetworkReply::NoError &&
-            reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 200) {
-        QMessageBox::information(this, "成功","文件上传成功");
-    } else {
-        QMessageBox::warning(this, "失败","文件上传失败");
-    }
-    // 上传完成，隐藏消息对话框
-    if (m_pProgressDlg) {
-        m_pProgressDlg->hide();
-    }
-    reply->deleteLater();
-}
+
 
 // 上传错误
 void MainWindow::upLoadError(QNetworkReply::NetworkError err)

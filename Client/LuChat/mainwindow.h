@@ -10,6 +10,8 @@
 #include <QNetworkRequest>
 #include <QNetworkReply>
 #include <QProgressDialog>
+#include <QNetworkConfigurationManager>
+#include <QHttpMultiPart>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -28,7 +30,7 @@ private slots:
     void OnWebSocketDisconnected(); // WebSocket断开
     void OnWebSocketError(QAbstractSocket::SocketError err); // 连接错误
     void OnNewMessageArrived();     // 新消息提醒
-    void OnUploadFile(QString filePath); // 处理文件上传
+    void OnUploadFile(const QString &filePath); // 处理文件上传
     void replyFinished(QNetworkReply *reply); // 上传响应
     void upLoadError(QNetworkReply::NetworkError err); // 上传错误
     void OnUploadProgress(qint64 recved, qint64 total); // 上传进度
@@ -46,5 +48,9 @@ private:
     QNetworkAccessManager  *m_pAccessManager;
     // 上传进度对话框
     QProgressDialog *m_pProgressDlg;
+
+    bool isNetworkAvailable() const;
+
+    void showUploadProgressDialog(const QString &fileName, qint64 fileSize, QNetworkReply *reply);
 };
 #endif // MAINWINDOW_H
