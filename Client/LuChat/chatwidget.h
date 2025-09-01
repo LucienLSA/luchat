@@ -31,7 +31,9 @@ public:
 
     // 设置发送按钮状态（连接成功/失败时调用）
     void SetSendBtnEnabled(bool enabled);
-
+    
+    // 添加当前用户到在线列表
+    void AddCurrentUserToOnlineList();
 
 signals:
     void newMessageArrived(); // 新消息提醒
@@ -46,11 +48,11 @@ private slots:
     // 接收WebSocket消息
     void OnWebSocketMsgReceived(const QString &msg);
     // 双击在线用户发起私聊
-    void OnItemDoubleClicked(QTableWidgetItem *item);
+    void on_onlineUsersTableWidget_itemDoubleClicked(QTableWidgetItem *item);
      // 关闭聊天标签页
-    void OnTabCloseRequested(int index);
+    void on_showMsgTabWidget_tabCloseRequested(int index);
     // 切换标签页
-    void OnCurrentChanged(int index);
+    void on_showMsgTabWidget_currentChanged(int index);
 
 protected:
     void keyPressEvent(QKeyEvent *e) override;

@@ -67,6 +67,8 @@ void MainWindow::OnWebSocketConnected()
     g_WebSocket.sendTextMessage(QJsonDocument(onlineObj).toJson(QJsonDocument::Compact));
     // 启用发送按钮
     m_pChatWidget->SetSendBtnEnabled(true);
+    // 添加当前用户到在线列表
+    m_pChatWidget->AddCurrentUserToOnlineList();
 }
 
 void MainWindow::OnWebSocketDisconnected()

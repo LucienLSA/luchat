@@ -115,6 +115,34 @@ void ChatWidget::SetSendBtnEnabled(bool enabled)
     ui->uploadFilePushButton->setShortcutEnabled(enabled);
 }
 
+// 添加当前用户到在线列表
+void ChatWidget::AddCurrentUserToOnlineList()
+{
+    UserInfo currentUser;
+    currentUser.strUserId = g_stUserInfo.strUserId;
+    currentUser.strUserPhone = g_stUserInfo.strUserPhone;
+    
+    // 避免重复添加
+    bool exists = false;
+    for (auto &u : m_vecOnlineUsers) {
+        if (u.strUserId == currentUser.strUserId) {
+            exists = true;
+            break;
+        }
+    }
+    
+    if (!exists) {
+        m_vecOnlineUsers.push_back(currentUser);
+        qDebug() << "Added current user to online list:" << currentUser.strUserPhone;
+    }
+    
+    // 更新在线用户列表显示
+    ui->onlineUsersTableWidget->setRowCount(m_vecOnlineUsers.size());
+    for (int i = 0; i < m_vecOnlineUsers.size(); ++i) {
+        QTableWidgetItem *item = new QTableWidgetItem(m_vecOnlineUsers[i].strUserPhone);
+        ui->onlineUsersTableWidget->setItem(i, 0, item);
+    }
+}
 
 
 // 发送消息按钮
@@ -309,30 +337,44 @@ void ChatWidget::OnWebSocketMsgReceived(const QString &msg)
 }
 
 // 双击在线用户发起私聊
-void ChatWidget::OnItemDoubleClicked(QTableWidgetItem *item)
+void ChatWidget::on_onlineUsersTableWidget_itemDoubleClicked(QTableWidgetItem *item)
 {
+    qDebug() << "Double-clicked on online user item";
+    
     // 获取点击的位置
     int row = item->row();
-    if (row < 0 || row >= m_vecOnlineUsers.size()) return;
+    qDebug() << "Clicked row:" << row << "Total online users:" << m_vecOnlineUsers.size();
+    
+    if (row < 0 || row >= m_vecOnlineUsers.size()) {
+        qDebug() << "Invalid row index";
+        return;
+    }
+    
     UserInfo targetUser = m_vecOnlineUsers[row];
+    qDebug() << "Target user:" << targetUser.strUserPhone << "ID:" << targetUser.strUserId;
+    
     // 检查是否已经存在私聊窗口
     for (int i = 0; i < m_vecUserIds.size();++i) {
         if (m_vecUserIds[i] == targetUser.strUserId) {
+            qDebug() << "Switching to existing private chat tab:" << i+1;
             // 切换到该用户的私聊标签页
             ui->showMsgTabWidget->setCurrentIndex(i+1);
             return ;
         }
     }
+    
+    qDebug() << "Creating new private chat tab for:" << targetUser.strUserPhone;
     // 新建私聊标签页
     QTextEdit *newEdit = new QTextEdit();
     newEdit->setReadOnly(true);
     int tabIndex = ui->showMsgTabWidget->addTab(newEdit, targetUser.strUserPhone);
     m_vecUserIds.push_back(targetUser.strUserId);
     ui->showMsgTabWidget->setCurrentIndex(tabIndex);
+    qDebug() << "New private chat tab created at index:" << tabIndex;
 }
 
 // 关闭标签页
-void ChatWidget::OnTabCloseRequested(int index)
+void ChatWidget::on_showMsgTabWidget_tabCloseRequested(int index)
 {
     // 公共聊天标签页禁止关闭
      if (index == 0 ) {
@@ -345,7 +387,7 @@ void ChatWidget::OnTabCloseRequested(int index)
 }
 
 // 切换标签页
-void ChatWidget::OnCurrentChanged(int index)
+void ChatWidget::on_showMsgTabWidget_currentChanged(int index)
 {
 
 }

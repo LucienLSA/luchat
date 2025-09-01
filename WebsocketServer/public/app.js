@@ -6,7 +6,8 @@ new Vue({
         newMsg: '', // Holds new messages to be sent to the server
         chatContent: '', // A running list of chat messages displayed on the screen
         username: null, // Our username
-        joined: false // True if email and username have been filled in
+        joined: false, // True if email and username have been filled in
+        onlineUsers: [] // List of online users
     },
 
     created: function() {
@@ -16,15 +17,29 @@ new Vue({
             console.log("message:", e);
             var msg = JSON.parse(e.data);
             if (msg != null) {
-                msg = msg.message;
-                if (msg.filelink == "") {
-                    self.chatContent += '<div class="chip">' + msg.username + '</div>'
-                        + emojione.toImage(msg.message) + '<br/>' + '<div class="time" style="color:gray">' + self.getCurrentTime() + '</div>';
-                } else {
-                    self.chatContent += '<div class="chip">'
-                            + msg.username + '</div>' 
-                        + emojione.toImage(msg.message) + '<br/>' + '&nbsp;&nbsp;&nbsp;&nbsp;<a href=' + msg.filelink + '>' 
-                        + msg.filelink + '</a>' + '<div class="time" style="color:gray">' + self.getCurrentTime() + '</div>';
+                // Handle different message types
+                if (msg.message) {
+                    // Public chat message
+                    var msgObj = msg.message;
+                    if (msgObj.filelink == "" || !msgObj.filelink) {
+                        self.chatContent += '<div class="chip">' + msgObj.userphone + '</div>'
+                            + emojione.toImage(msgObj.message) + '<br/>' + '<div class="time" style="color:gray">' + (msgObj.time || self.getCurrentTime()) + '</div>';
+                    } else {
+                        self.chatContent += '<div class="chip">'
+                                + msgObj.userphone + '</div>' 
+                            + emojione.toImage(msgObj.message) + '<br/>' + '&nbsp;&nbsp;&nbsp;&nbsp;<a href=' + msgObj.filelink + '>' 
+                            + '[文件]' + '</a>' + '<div class="time" style="color:gray">' + (msgObj.time || self.getCurrentTime()) + '</div>';
+                    }
+                } else if (msg.online) {
+                    // Online user notification
+                    var onlineUser = msg.online;
+                    // Add to online users list if not already present
+                    var exists = self.onlineUsers.some(function(user) {
+                        return user.userid === onlineUser.userid;
+                    });
+                    if (!exists) {
+                        self.onlineUsers.push(onlineUser);
+                    }
                 }
             }
 
@@ -40,14 +55,14 @@ new Vue({
                 this.ws.send(
                     JSON.stringify({
                         message: {
-                            userid: -1,
+                            userid: 'web-' + Date.now(), // Generate unique web user ID
+                            userphone: '网页-' + this.username,
                             filelink: "",
-                            username: '网页-' + this.username,
                             message: $('<p>').html(this.newMsg).text(), // Strip out html
                             time: curTime
                         }
-                    }
-                ));
+                    })
+                );
                 this.newMsg = ''; // Reset newMsg
             }
         },
@@ -59,6 +74,14 @@ new Vue({
             }
             this.username = $('<p>').html(this.username).text();
             this.joined = true;
+            
+            // Send online notification to match desktop client format
+            this.ws.send(JSON.stringify({
+                online: {
+                    userid: 'web-' + Date.now(),
+                    userphone: '网页-' + this.username
+                }
+            }));
         },
 
         gravatarURL: function(email) {
