@@ -14,3 +14,178 @@ main {
     width: 100%;
     overflow-y: scroll;
 }
+
+/* 文件上传相关样式 */
+.file-upload-item {
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.file-name {
+    font-weight: bold;
+    margin-right: 10px;
+    flex: 1;
+}
+
+.file-size {
+    color: #666;
+    font-size: 0.9em;
+    margin-right: 10px;
+}
+
+.file-status {
+    color: #2196F3;
+    font-size: 0.9em;
+}
+
+.progress {
+    margin: 8px 0;
+}
+
+.file-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.file-item:last-child {
+    border-bottom: none;
+}
+
+.file-item .file-info {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.file-item .file-info i {
+    margin-right: 10px;
+    color: #666;
+}
+
+.file-item .file-name {
+    margin-right: 10px;
+    flex: 1;
+}
+
+.file-item .file-size {
+    margin-right: 10px;
+    color: #666;
+    font-size: 0.9em;
+}
+
+.file-item .file-date {
+    color: #999;
+    font-size: 0.8em;
+    margin-right: 10px;
+}
+
+.file-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.file-actions button {
+    min-width: 40px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.connection-status {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    color: white;
+}
+
+.badge.green {
+    background-color: #4CAF50;
+}
+
+.badge.yellow {
+    background-color: #FF9800;
+}
+
+.badge.red {
+    background-color: #F44336;
+}
+
+/* 断点续传相关样式 */
+.resume-badge {
+    background-color: #FF9800;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 0.7em;
+    margin-left: 8px;
+}
+
+.instant-badge {
+    background-color: #4CAF50;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 0.7em;
+    margin-left: 8px;
+}
+
+.chunk-info {
+    color: #666;
+    font-size: 0.8em;
+    margin-left: 8px;
+}
+
+.file-actions {
+    margin-top: 8px;
+    display: flex;
+    gap: 8px;
+}
+
+.file-actions .btn-small {
+    height: 28px;
+    line-height: 28px;
+    padding: 0 12px;
+    font-size: 0.8em;
+}
+
+/* 上传状态颜色 */
+.file-status {
+    color: #2196F3;
+    font-size: 0.9em;
+}
+
+.file-status:contains("断点续传") {
+    color: #FF9800;
+}
+
+.file-status:contains("上传失败") {
+    color: #F44336;
+}
+
+.file-status:contains("上传完成") {
+    color: #4CAF50;
+}

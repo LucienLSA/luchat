@@ -30,6 +30,22 @@
             <div class="card">
                 <div class="card-content">
                     <span class="card-title">在线用户</span>
+                    <!-- 连接状态显示 -->
+                    <div class="connection-status" style="margin-bottom: 10px;">
+                        <span class="badge" :class="{
+                            'green': connectionStatus === 'connected',
+                            'yellow': connectionStatus === 'connecting' || connectionStatus === 'reconnecting',
+                            'red': connectionStatus === 'disconnected'
+                        }">
+                            {{ getStatusText() }}
+                        </span>
+                        <button v-if="connectionStatus === 'disconnected'" 
+                                class="btn-small waves-effect waves-light" 
+                                @click="manualReconnect"
+                                style="margin-left: 10px;">
+                            重连
+                        </button>
+                    </div>
                     <ul class="collection">
                         <li class="collection-item" v-for="user in onlineUsers" :key="user.userid">
                             {{ user.userphone }}
@@ -40,13 +56,93 @@
         </div>
     </div>
     <div class="row" v-if="joined">
-        <div class="input-field col s8">
-            <input type="text" v-model="newMsg" @keyup.enter="send">
+        <div class="input-field col s6">
+            <input type="text" v-model="newMsg" @keyup.enter="send" placeholder="输入消息...">
         </div>
-        <div class="input-field col s4">
+        <div class="input-field col s2">
+            <input type="file" id="fileInput" ref="fileInput" @change="onFileSelect" style="display: none;" multiple>
+            <button class="waves-effect waves-light btn-small" @click="selectFile" style="width: 100%;">
+                <i class="material-icons">attach_file</i>
+            </button>
+        </div>
+        <div class="input-field col s2">
+            <button class="waves-effect waves-light btn-small" @click="showFileList" style="width: 100%;" title="文件列表">
+                <i class="material-icons">folder</i>
+            </button>
+        </div>
+        <div class="input-field col s1">
+            <button class="waves-effect waves-light btn-small red" @click="testDelete" style="width: 100%;" title="测试删除">
+                <i class="material-icons">delete</i>
+            </button>
+        </div>
+        <div class="input-field col s2">
             <button class="waves-effect waves-light btn" @click="send">
                 发送
             </button>
+        </div>
+    </div>
+    
+    <!-- 文件上传进度 -->
+    <div class="row" v-if="uploadingFiles.length > 0">
+        <div class="col s12">
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title">文件上传进度</span>
+                    <div v-for="file in uploadingFiles" :key="file.id" class="file-upload-item">
+                        <div class="file-info">
+                            <span class="file-name">{{ file.name }}</span>
+                            <span class="file-size">{{ formatFileSize(file.size) }}</span>
+                            <span v-if="file.isResuming" class="resume-badge">断点续传</span>
+                            <span v-if="file.isInstant" class="instant-badge">秒传</span>
+                        </div>
+                        <div class="progress">
+                            <div class="determinate" :style="{width: file.progress + '%'}"></div>
+                        </div>
+                        <div class="file-status">
+                            {{ file.status }}
+                            <span v-if="file.uploadedChunks > 0" class="chunk-info">
+                                ({{ file.uploadedChunks }}/{{ file.chunks }} 分块)
+                            </span>
+                        </div>
+                        <div v-if="file.status === '上传失败'" class="file-actions">
+                            <button class="btn-small waves-effect waves-light" @click="retryUpload(file)">
+                                <i class="material-icons">refresh</i> 重试
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 文件列表模态框 -->
+    <div id="fileListModal" class="modal">
+        <div class="modal-content">
+            <h4>文件列表</h4>
+            <div v-if="fileList.length === 0" class="center-align" style="padding: 20px;">
+                <p>暂无文件</p>
+            </div>
+            <div v-else class="file-list">
+                <div v-for="file in fileList" :key="file.id" class="file-item">
+                    <div class="file-info">
+                        <i class="material-icons">{{ getFileIcon(file.file_name) }}</i>
+                        <span class="file-name">{{ file.file_name }}</span>
+                        <span class="file-size">{{ formatFileSize(file.file_size) }}</span>
+                        <span class="file-date">{{ formatDate(file.created_at) }}</span>
+                    </div>
+                    <div class="file-actions">
+                        <button class="btn-small waves-effect waves-light" @click="downloadFile(file.file_name)" title="下载">
+                            <i class="material-icons">download</i>
+                        </button>
+                        <button class="btn-small waves-effect waves-light red" @click="deleteFile(file.file_name)" title="删除">
+                            <i class="material-icons">delete</i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="waves-effect waves-green btn-flat" @click="closeModal">关闭</button>
         </div>
     </div>
     <div class="row" v-if="!joined">
