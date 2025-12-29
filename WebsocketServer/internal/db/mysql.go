@@ -23,6 +23,5 @@ func InitMySQL(cfg config.SqlConfig) error {
 	return DB.AutoMigrate(
 		&model.ChatUser{},
 		&model.ChatUploadFile{},
-		&model.ChatClient{},
 	)
 }

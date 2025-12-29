@@ -14,10 +14,24 @@ type SqlConfig struct {
 	Charset  string `json:"charset"`
 }
 
-// 全局配置实例
-var Cfg SqlConfig
+type AIConfig struct {
+	APIKey      string  `json:"api_key"`
+	BaseURL     string  `json:"base_url"`
+	Model       string  `json:"model"`
+	Temperature float32 `json:"temperature"`
+	MaxTokens   int     `json:"max_tokens"`
+	Timeout     int     `json:"timeout"` // 秒
+}
 
-func ReadConfig(path string) SqlConfig {
+type Config struct {
+	Database SqlConfig `json:"database"`
+	AI       AIConfig  `json:"ai"`
+}
+
+// 全局配置实例
+var Cfg Config
+
+func ReadConfig(path string) Config {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		panic("read config file failed:" + err.Error())

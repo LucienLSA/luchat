@@ -46,22 +46,3 @@ func CheckUserExists(userPhone string) error {
 	}
 	return nil
 }
-
-// // 初始化测试用户
-// func InitTestUser() {
-// 	// 检查是否已存在测试用户
-// 	var count int64
-// 	DB.Model(&model.ChatUser{}).Where("userphone = ?", "test").Count(&count)
-// 	if count == 0 {
-// 		// 创建测试用户
-// 		testUser := &model.ChatUser{
-// 			UserPhone: "test",
-// 			Password:  "123456",
-// 		}
-// 		if err := DB.Create(testUser).Error; err != nil {
-// 			logrus.Errorf("创建测试用户失败: %v", err)
-// 		} else {
-// 			logrus.Info("测试用户创建成功: test/123456")
-// 		}
-// 	}
-// }

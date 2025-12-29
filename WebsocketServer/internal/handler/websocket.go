@@ -1,8 +1,13 @@
 package handler
 
 import (
+	"context"
+	"encoding/json"
 	"luchat/WebsocketServer/internal/global"
+	"luchat/WebsocketServer/internal/model"
+	"luchat/WebsocketServer/internal/service"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -77,7 +82,9 @@ func HandleWebsocket(ctx *gin.Context) {
 		}
 		// 判断是否为心跳包
 		if mt == websocket.TextMessage {
-			if string(msg) == "ping" {
+			messageStr := string(msg)
+
+			if messageStr == "ping" {
 				// 回复pong
 				if err := ws.WriteMessage(websocket.TextMessage, []byte("pong")); err != nil {
 					logrus.Errorf("发送pong失败: %v", err)
@@ -85,6 +92,17 @@ func HandleWebsocket(ctx *gin.Context) {
 				}
 				resetHeartbeat() // 重置超时
 				continue         // 不广播心跳包
+			}
+
+			// 检查是否为AI对话请求
+			if strings.HasPrefix(messageStr, "@ai ") || strings.HasPrefix(messageStr, "/ai ") {
+				// 处理AI对话
+				aiMessage := strings.TrimPrefix(messageStr, "@ai ")
+				aiMessage = strings.TrimPrefix(aiMessage, "/ai ")
+
+				go handleAIMessage(aiMessage)
+				resetHeartbeat()
+				continue
 			}
 		}
 		// 重置心跳超时
@@ -94,6 +112,55 @@ func HandleWebsocket(ctx *gin.Context) {
 			MessageType: mt,  // 消息类型（与读取的一致）
 			Message:     msg, // 消息内容
 		}
+	}
+}
+
+// 处理AI消息
+func handleAIMessage(message string) {
+	logrus.Infof("收到AI对话请求: %s", message)
+
+	aiService := service.GetAIService()
+	if aiService == nil {
+		logrus.Error("AI服务未初始化")
+		broadcastMessage("系统", "AI服务暂时不可用，请稍后重试")
+		return
+	}
+
+	// 调用AI服务
+	aiReq := &model.AIChatRequest{
+		Message: message,
+		Stream:  false, // WebSocket中暂时不支持流式输出
+	}
+
+	aiResp, err := aiService.Chat(context.Background(), aiReq)
+	if err != nil {
+		logrus.Errorf("AI对话失败: %v", err)
+		broadcastMessage("豆包AI", "抱歉，我现在无法回答您的问题，请稍后重试。")
+		return
+	}
+
+	// 广播AI回复
+	broadcastMessage("豆包AI", aiResp.Message)
+}
+
+// 广播消息给所有客户端
+func broadcastMessage(sender, content string) {
+	message := global.Message{
+		Email:    sender,
+		Username: sender,
+		Userid:   "ai",
+		Message:  content,
+	}
+
+	messageBytes, err := json.Marshal(message)
+	if err != nil {
+		logrus.Errorf("序列化AI消息失败: %v", err)
+		return
+	}
+
+	global.Broadcast <- global.StringMessage{
+		MessageType: websocket.TextMessage,
+		Message:     messageBytes,
 	}
 }
 

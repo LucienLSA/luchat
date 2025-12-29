@@ -21,9 +21,9 @@ func Init() *gin.Engine {
 		MaxAge:           12 * time.Hour,
 	}))
 	// 5. 静态资源
-	r.Static("/public", "./public")
-	r.Static("/fonts", "./public/fonts")
-	r.StaticFile("/", "./public/index.html")
+	r.Static("/public", "./web")
+	r.Static("/fonts", "./web/fonts")
+	r.StaticFile("/", "./web/index.html")
 	//  接口
 	api := r.Group("/api")
 	{
@@ -38,6 +38,10 @@ func Init() *gin.Engine {
 		api.POST("/instant/check", handler.CheckInstantUpload) // 检查秒传
 		api.GET("/download", handler.DownloadFile)             // 下载文件
 		api.GET("/files", handler.GetFileList)                 // 获取文件列表
+
+		// AI对话相关接口
+		api.POST("/ai/chat", handler.AIChat)         // AI对话
+		api.GET("/ai/health", handler.AIHealthCheck) // AI服务健康检查
 
 	}
 	// WebSocket路由

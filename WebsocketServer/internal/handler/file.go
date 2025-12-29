@@ -29,7 +29,7 @@ func UploadFile(c *gin.Context) {
 	// 安全处理文件名：移除路径分隔符，防止路径遍历攻击
 	filename := strings.ReplaceAll(file.Filename, "/", "")
 	filename = strings.ReplaceAll(filename, "\\", "")
-	saveDir := filepath.Join("public", "uploads")
+	saveDir := filepath.Join("web", "uploads")
 	if err := os.MkdirAll(saveDir, 0755); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"msg": "创建上传目录失败：" + err.Error(),
@@ -54,7 +54,7 @@ func UploadFile(c *gin.Context) {
 	// 后续可保存到OSS
 	c.JSON(http.StatusOK, gin.H{
 		"msg":       "上传成功",
-		"file_path": "/public/uploads/" + filename,
+		"file_path": "/web/uploads/" + filename,
 	})
 }
 
@@ -98,7 +98,7 @@ func UploadChunk(c *gin.Context) {
 	}
 
 	// 创建临时存储目录
-	tempDir := filepath.Join("public", "temp", fileHash)
+	tempDir := filepath.Join("web", "temp", fileHash)
 	if err := os.MkdirAll(tempDir, 0755); err != nil {
 		response.ResponseError(c, response.CodeServerBusy)
 		return
@@ -132,7 +132,7 @@ func CheckResume(c *gin.Context) {
 	}
 
 	// 检查临时目录是否存在
-	tempDir := filepath.Join("public", "temp", req.FileHash)
+	tempDir := filepath.Join("web", "temp", req.FileHash)
 	var uploadedChunks []int
 
 	// 检查已上传的分块
@@ -218,9 +218,9 @@ func MergeChunks(c *gin.Context) {
 		return
 	}
 	// 获取临时存储分块文件路径
-	tempDir := filepath.Join("public", "temp", req.FileHash)
+	tempDir := filepath.Join("web", "temp", req.FileHash)
 	// 获取目标存储文件路径
-	saveDir := filepath.Join("public", "uploads")
+	saveDir := filepath.Join("web", "uploads")
 	if err := os.MkdirAll(saveDir, 0755); err != nil {
 		response.ResponseError(c, response.CodeServerBusy)
 		return
@@ -275,7 +275,7 @@ func MergeChunks(c *gin.Context) {
 
 	response.ResponseSuccessData(c, gin.H{
 		"msg":       "文件上传成功",
-		"file_path": "/public/uploads/" + req.Filename,
+		"file_path": "/web/uploads/" + req.Filename,
 	})
 }
 
@@ -290,7 +290,7 @@ func DownloadFile(c *gin.Context) {
 	// 安全处理文件名
 	filename = strings.ReplaceAll(filename, "/", "")
 	filename = strings.ReplaceAll(filename, "\\", "")
-	filePath := filepath.Join("public", "uploads", filename)
+	filePath := filepath.Join("web", "uploads", filename)
 
 	// 检查文件是否存在
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
@@ -320,7 +320,7 @@ func DeleteFile(c *gin.Context) {
 	// 安全处理文件名
 	filename = strings.ReplaceAll(filename, "/", "")
 	filename = strings.ReplaceAll(filename, "\\", "")
-	filePath := filepath.Join("public", "uploads", filename)
+	filePath := filepath.Join("web", "uploads", filename)
 	logrus.Printf("文件路径: %s", filePath)
 
 	// 检查文件是否存在
