@@ -118,7 +118,7 @@ new Vue({
                 if (event.code !== 1000 && !self.isReconnecting) {
                     self.attemptReconnect();
                 }
-            };
+        };
             
         this.ws.onerror = function(err) {
             console.error('WebSocket错误:', err);
